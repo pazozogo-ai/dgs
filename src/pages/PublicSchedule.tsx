@@ -133,7 +133,8 @@ export default function PublicSchedule() {
   }
 
   const daySlots = buildDaySlots({ date: selectedDay, profile })
-
+    .filter((s) => s.endAt.getTime() > Date.now())
+    .filter((s) => !busySet.has(`${s.startAt.toISOString()}__${s.endAt.toISOString()}`));
   const [showAllSlots, setShowAllSlots] = React.useState(false);
 
   const slotGroups = React.useMemo(() => {
@@ -147,9 +148,6 @@ export default function PublicSchedule() {
       .sort(([a], [b]) => (a < b ? -1 : 1))
       .map(([hour, slots]) => ({ hour, slots }));
   }, [daySlots]);
-
-    .filter((s) => s.endAt.getTime() > Date.now())
-    .filter((s) => !busySet.has(`${s.startAt.toISOString()}__${s.endAt.toISOString()}`));
 
   async function startTelegramConfirm() {
     if (!selectedSlot) return;
