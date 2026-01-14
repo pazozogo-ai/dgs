@@ -20,7 +20,7 @@ export const handler: Handler = async (event) => {
     const jwt = signJWT({ sub: row.user_id, tg: row.telegram_user_id }, process.env.APP_JWT_SECRET!, 60 * 60 * 24 * 30);
     const cookie = setCookieHeader("sl_session", jwt, { httpOnly: true, secure: true, sameSite: "Lax", path: "/", maxAge: 60 * 60 * 24 * 30 });
 
-    return { statusCode: 302, headers: { "Set-Cookie": cookie, "Location": (process.env.APP_BASE_URL || "") + "/" }, body: "" };
+    return { statusCode: 302, headers: { "Set-Cookie": cookie, "Location": "/" }, body: "" };
   } catch (e: any) {
     return { statusCode: 500, body: e.message };
   }

@@ -87,7 +87,7 @@ async function handleLoginConfirm(callback: any, nonce: string) {
   await dbPost("login_tokens", { token, user_id: row.user_id, telegram_user_id: row.telegram_user_id, status: "active", expires_at: expiresAt }, "return=minimal");
   await dbPatch(`login_nonces?nonce=eq.${encodeURIComponent(nonce)}`, { status: "consumed" }, "return=minimal");
 
-  const base = process.env.APP_BASE_URL!;
+  const base = new URL(process.env.APP_BASE_URL!).origin;
   const link = `${base}/.netlify/functions/authFinish?token=${encodeURIComponent(token)}`;
 
   await tgAnswerCallbackQuery(callback.id, "Ок!");
