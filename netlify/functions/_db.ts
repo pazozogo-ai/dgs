@@ -21,8 +21,12 @@ export async function dbPost<T>(path: string, body: any, prefer: string = "retur
     headers: { ...headers(), Prefer: prefer },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`DB POST failed: ${res.status} ${await res.text()}`);
-  return res.json() as Promise<T>;
+
+  const text = await res.text();
+  if (!res.ok) throw new Error(`DB POST failed: ${res.status} ${text}`);
+
+  // return=minimal -> empty body
+  return (text ? (JSON.parse(text) as T) : (null as unknown as T));
 }
 
 export async function dbPatch<T>(path: string, body: any, prefer: string = "return=representation"): Promise<T> {
@@ -31,6 +35,10 @@ export async function dbPatch<T>(path: string, body: any, prefer: string = "retu
     headers: { ...headers(), Prefer: prefer },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`DB PATCH failed: ${res.status} ${await res.text()}`);
-  return res.json() as Promise<T>;
+
+  const text = await res.text();
+  if (!res.ok) throw new Error(`DB PATCH failed: ${res.status} ${text}`);
+
+  // return=minimal -> empty body
+  return (text ? (JSON.parse(text) as T) : (null as unknown as T));
 }
