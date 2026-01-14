@@ -194,3 +194,103 @@ a { color: inherit; text-decoration: none; }
   .container { padding: 14px; }
   .calDay { border-radius: 12px; }
 }
+
+
+/* --- Patch: UI polish v1 --- */
+.container.narrow { max-width: 860px; }
+.pageHeader { margin: 6px 0 14px; }
+.pageHeader .title { font-size: 34px; font-weight: 880; letter-spacing: -.5px; margin: 0; }
+.pageHeader .lead { margin: 6px 0 0; color: rgba(233,238,252,.78); line-height: 1.45; }
+
+.card + .card { margin-top: 14px; }
+
+.kvRow { display:flex; gap: 10px; flex-wrap: wrap; align-items:center; }
+.kvRow .kv { flex: 1; min-width: 220px; }
+
+.badge {
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  color: rgba(233,238,252,.92);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.pills {
+  display:flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items:center;
+}
+.pillBtn {
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  color: rgba(233,238,252,.9);
+  padding: 8px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 13px;
+}
+.pillBtn:hover { filter: brightness(1.08); }
+.pillBtn.active {
+  background: rgba(34,211,238,.14);
+  border-color: rgba(34,211,238,.35);
+  box-shadow: 0 0 0 3px rgba(34,211,238,.08);
+  color: #e9eefc;
+}
+.pillBtn:disabled { opacity: .5; cursor: not-allowed; }
+
+.split2 { display:grid; grid-template-columns: 1.15fr .85fr; gap: 14px; }
+@media (max-width: 920px) { .split2 { grid-template-columns: 1fr; } }
+
+/* Calendar: make it compact */
+.calGrid { gap: 6px; }
+.calDay {
+  aspect-ratio: auto;
+  height: 44px;
+  border-radius: 12px;
+  font-weight: 800;
+}
+.calDay.selected { box-shadow: 0 0 0 3px rgba(34,211,238,.12); }
+.calDay.active:not(.selected) { border-color: rgba(34,211,238,.25); }
+.calDay.muted { opacity: .38; }
+
+.slotChips { display:flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.slotChip {
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  color: rgba(233,238,252,.92);
+  padding: 10px 12px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-weight: 850;
+  min-width: 106px;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.slotChip:hover { filter: brightness(1.08); }
+.slotChip.selected {
+  background: rgba(59,130,246,.16);
+  border-color: rgba(59,130,246,.35);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.10);
+}
+.slotChip .meta { font-size: 12px; opacity: .75; font-weight: 800; }
+
+/* Step sections */
+.stepTitle { font-size: 16px; font-weight: 900; margin: 0 0 8px; }
+.stepHint { margin: 0; color: rgba(233,238,252,.72); font-size: 13px; line-height: 1.45; }
+
+/* Mobile: more breathing room */
+@media (max-width: 560px) {
+  .container { padding: 14px; }
+  .card { padding: 14px; border-radius: 16px; }
+  .calDay { height: 40px; }
+  .slotChip { min-width: 48%; }
+}

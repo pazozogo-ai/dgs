@@ -139,7 +139,7 @@ export default function PublicSchedule() {
   async function startTelegramConfirm() {
     if (!selectedSlot) return;
     if (!form.name.trim()) {
-      alert("Укажи имя");
+      alert("Укажите имя");
       return;
     }
     setSending(true);
@@ -161,134 +161,155 @@ export default function PublicSchedule() {
 
   const ownerName = profile.display_name ?? profile.user_id ?? profile.slug;
 
+  
   return (
-    <div className="stack">
-      <div className="card">
-        <div className="sectionHead">
-          <div>
-            <div className="h1">Запись к {ownerName}</div>
-            <div className="sub">Выберите дату и время. Подтверждение записи — в Telegram.</div>
-          </div>
-          <div className="pill">{profile.slot_minutes} мин • {profile.day_start}:00—{profile.day_end}:00</div>
-        </div>
-
-        <div className="grid2">
-          <div>
-            <div className="calHeader">
-              <button className="btn" type="button" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>‹</button>
-              <div className="title" style={{ textAlign: "center" }}>
-                {month.toLocaleDateString([], { month: "long", year: "numeric" })}
-              </div>
-              <button className="btn" type="button" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>›</button>
-            </div>
-
-            <div className="calGrid">
-              {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((d) => (
-                <div key={d} className="calDow">{d}</div>
-              ))}
-              {weeks.flat().map((d) => {
-                const inMonth = d.getMonth() === month.getMonth();
-                const disabled = d.getTime() < today.getTime() || d.getTime() > startOfDay(rangeEnd).getTime();
-                const active = dayHasFree(d);
-                const selected = isSameDay(d, selectedDay);
-
-                return (
-                  <button
-                    key={d.toISOString()}
-                    type="button"
-                    className={`calDay ${inMonth ? "" : "muted"} ${selected ? "selected" : ""} ${active ? "active" : ""}`}
-                    disabled={disabled}
-                    onClick={() => {
-                      setSelectedDay(startOfDay(d));
-                      setSelectedSlot(null);
-                      setTgLink(null);
-                    }}
-                  >
-                    <span>{d.getDate()}</span>
-                    {active && <span className="dot" aria-hidden />}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="hint">
-              Время показано в вашей таймзоне: <b>{Intl.DateTimeFormat().resolvedOptions().timeZone || profile.timezone}</b>
-            </div>
-          </div>
-
-          <div>
-            <div className="title" style={{ marginBottom: 10 }}>{formatDayTitle(selectedDay)}</div>
-
-            {daySlots.length === 0 ? (
-              <div className="sub">На этот день свободных слотов нет. Выберите другую дату.</div>
-            ) : (
-              <div className="slotList">
-                {daySlots.slice(0, 16).map((s) => {
-                  const key = s.startAt.toISOString();
-                  const sel = selectedSlot?.startAt.toISOString() === key;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      className={`slotRow ${sel ? "selected" : ""}`}
-                      onClick={() => {
-                        setSelectedSlot(s);
-                        setTgLink(null);
-                      }}
-                    >
-                      <div className="slotTime">
-                        {s.startAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </div>
-                      <div className="slotMeta">{profile.slot_minutes} мин</div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {selectedSlot && (
-              <div className="divider" style={{ marginTop: 14 }} />
-            )}
-
-            {selectedSlot && (
-              <div className="stack" style={{ gap: 10 }}>
-                <div className="title" style={{ fontSize: 18 }}>Данные для заявки</div>
-
-                <label className="label">Ваше имя</label>
-                <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-
-                <label className="label">Комментарий (опционально)</label>
-                <textarea className="input" rows={3} value={form.comment} onChange={(e) => setForm({ ...form, comment: e.target.value })} />
-
-                {!tgLink ? (
-                  <button className="btn primary" type="button" onClick={startTelegramConfirm} disabled={sending}>
-                    {sending ? "..." : "Подтвердить в Telegram"}
-                  </button>
-                ) : (
-                  <div className="note">
-                    <div className="noteTitle">Шаг 2: подтвердите заявку в Telegram</div>
-                    <div className="sub" style={{ marginTop: 6 }}>
-                      Откройте Telegram и нажмите “Подтвердить запись” в боте. После этого заявка уйдёт владельцу расписания.
-                    </div>
-                    <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-                      <a className="btn primary" href={tgLink}>
-                        Открыть Telegram
-                      </a>
-                      <button className="btn" type="button" onClick={() => navigator.clipboard?.writeText(tgLink)}>
-                        Скопировать ссылку
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="hint">Сервис dialogs.tech не просит пароль — подтверждение идёт через Telegram.</div>
-              </div>
-            )}
-          </div>
+    <div className="container narrow">
+      <div className="pageHeader">
+        <h1 className="title">Запись к {ownerName}</h1>
+        <p className="lead">Выберите удобное время. Подтверждение записи — в Telegram.</p>
+        <div className="kvRow" style={{ marginTop: 10 }}>
+          <span className="badge">⏱ {profile.slot_minutes} мин</span>
+          <span className="badge">🕒 {profile.day_start}:00—{profile.day_end}:00</span>
+          <span className="badge">🌍 Ваша таймзона: <b>{Intl.DateTimeFormat().resolvedOptions().timeZone || profile.timezone}</b></span>
         </div>
       </div>
 
-      <div className="footer">dialogs.tech</div>
+      <div className="card">
+        <div className="cardHeader">
+          <div>
+            <div className="title">1. Выберите день</div>
+            <div className="sub">Дни со свободными слотами отмечены точкой.</div>
+          </div>
+          <div className="row" style={{ gap: 8 }}>
+            <button className="btn" type="button" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>‹</button>
+            <div className="title" style={{ minWidth: 200, textAlign: "center" }}>
+              {month.toLocaleDateString([], { month: "long", year: "numeric" })}
+            </div>
+            <button className="btn" type="button" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>›</button>
+          </div>
+        </div>
+
+        <div className="calGrid">
+          {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((d) => (
+            <div key={d} className="calDow">{d}</div>
+          ))}
+          {weeks.flat().map((d) => {
+            const inMonth = d.getMonth() === month.getMonth();
+            const disabled = d.getTime() < today.getTime() || d.getTime() > startOfDay(rangeEnd).getTime();
+            const active = dayHasFree(d);
+            const selected = isSameDay(d, selectedDay);
+
+            return (
+              <button
+                key={d.toISOString()}
+                type="button"
+                className={`calDay ${inMonth ? "" : "muted"} ${selected ? "selected" : ""} ${active ? "active" : ""}`}
+                disabled={disabled}
+                onClick={() => {
+                  setSelectedDay(startOfDay(d));
+                  setSelectedSlot(null);
+                  setForm({ name: "", comment: "" });
+                  setTgLink(null);
+                }}
+              >
+                <span>{d.getDate()}</span>
+                {active && <span className="dot" aria-hidden />}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="hint" style={{ marginTop: 10 }}>Доступность показывается на ближайшие 30 дней.</div>
+      </div>
+
+      <div className="card">
+        <div className="cardHeader">
+          <div>
+            <div className="title">2. Выберите время</div>
+            <div className="sub">{formatDayTitle(selectedDay)}</div>
+          </div>
+        </div>
+
+        {daySlots.length === 0 ? (
+          <div className="sub">На выбранный день свободных слотов нет. Выберите другую дату.</div>
+        ) : (
+          <div className="slotChips">
+            {daySlots.slice(0, 24).map((s) => {
+              const key = s.startAt.toISOString();
+              const sel = selectedSlot?.startAt.toISOString() === key;
+              const label = s.startAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  className={`slotChip ${sel ? "selected" : ""}`}
+                  onClick={() => {
+                    setSelectedSlot(s);
+                    setTgLink(null);
+                  }}
+                >
+                  <span>{label}</span>
+                  <span className="meta">{profile.slot_minutes} мин</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {daySlots.length > 24 && (
+          <div className="hint" style={{ marginTop: 10 }}>
+            Показаны первые 24 слота. Если Вам нужно другое время — попробуйте соседнюю дату.
+          </div>
+        )}
+      </div>
+
+      <div className="card">
+        <div className="cardHeader">
+          <div>
+            <div className="title">3. Подтвердите запись</div>
+            <div className="sub">Пароль не нужен — подтверждение происходит в Telegram.</div>
+          </div>
+        </div>
+
+        {!selectedSlot ? (
+          <div className="sub">Сначала выберите день и время.</div>
+        ) : (
+          <div className="stack" style={{ gap: 10 }}>
+            <div className="badge" style={{ width: "fit-content" }}>
+              🗓 {formatDayTitle(selectedDay)} • {selectedSlot.startAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </div>
+
+            <label className="label">Ваше имя</label>
+            <input
+              className="input"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="Например: Иван"
+            />
+
+            <label className="label">Комментарий (необязательно)</label>
+            <textarea
+              className="input"
+              style={{ height: 92, resize: "vertical" }}
+              value={form.comment}
+              onChange={(e) => setForm({ ...form, comment: e.target.value })}
+            />
+
+            <button className="btn primary" disabled={!form.name.trim() || sending} onClick={startTelegramConfirm}>
+              {sending ? "Подготовка..." : "Подтвердить в Telegram"}
+            </button>
+
+            {tgLink && (
+              <a className="btn" href={tgLink} target="_blank" rel="noreferrer">
+                Открыть Telegram
+              </a>
+            )}
+
+            <div className="hint">Сервис dialogs.tech не запрашивает пароль — подтверждение происходит в Telegram.</div>
+          </div>
+        )}
+      </div>
     </div>
   );
+
 }
