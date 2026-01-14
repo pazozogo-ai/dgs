@@ -6,17 +6,13 @@ type LoginTokenRow = { token: string; user_id: string; telegram_user_id: string;
 
 export const handler: Handler = async (event) => {
   try {
+    const ua = String(event.headers["user-agent"] || event.headers["User-Agent"] || "").toLowerCase();
+    const isPreviewBot = ua.includes("telegrambot") || ua.includes("discordbot") || ua.includes("slackbot") || ua.includes("facebookexternalhit") || ua.includes("whatsapp");
+
     const token = event.queryStringParameters?.token;
     if (!token) return { statusCode: 400, body: "Missing token" };
 
-    const ua = (event.headers["user-agent"] || event.headers["User-Agent"] || "").toLowerCase();
-    const isPreviewBot =
-      ua.includes("telegrambot") ||
-      ua.includes("discordbot") ||
-      ua.includes("slackbot") ||
-      ua.includes("facebookexternalhit") ||
-      ua.includes("whatsapp");
-
+    // Prevent link-preview bots from consuming magic-links.
     if (isPreviewBot) {
       return {
         statusCode: 200,
@@ -36,7 +32,11 @@ export const handler: Handler = async (event) => {
     const jwt = signJWT({ sub: row.user_id, tg: row.telegram_user_id }, process.env.APP_JWT_SECRET!, 60 * 60 * 24 * 30);
     const cookie = setCookieHeader("sl_session", jwt, { httpOnly: true, secure: true, sameSite: "Lax", path: "/", maxAge: 60 * 60 * 24 * 30 });
 
-    return { statusCode: 302, headers: { "Set-Cookie": cookie, "Location": "/", "Cache-Control": "no-store" }, body: "" };
+    return {
+      statusCode: 302,
+      headers: { "Set-Cookie": cookie, "Location": "/", "Cache-Control": "no-store" },
+      body: "",
+    };
   } catch (e: any) {
     return { statusCode: 500, body: e.message };
   }

@@ -28,7 +28,7 @@ function useMe() {
 function Topbar({ authed, onLogout }: { authed: boolean; onLogout: () => void }) {
   return (
     <div className="topbar">
-      <Link to="/" className="brand">SchedLinks</Link>
+      <Link to="/" className="brand">dialogs.tech</Link>
       <div className="spacer" />
       {authed ? (
         <>
@@ -52,17 +52,21 @@ export default function App() {
     window.location.reload();
   }
 
-  if (me === null) return <div className="container"><div className="card">Загрузка...</div></div>;
+  if (me === null) return <div className="app-shell"><div className="card">Загрузка...</div></div>;
   const authed = me.ok === true;
 
   return (
-    <div className="container">
+    <div className="app-shell">
       <Topbar authed={authed} onLogout={logout} />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={authed ? <Dashboard /> : <Navigate to="/login" replace />} />
         <Route path="/approvals" element={authed ? <Approvals /> : <Navigate to="/login" replace />} />
-        <Route path="/u/:slug" element={<PublicSchedule />} />
+
+        {/* Public booking page: best UX is dialogs.tech/<userID>. Keep /u/:slug for backwards compatibility. */}
+        <Route path="/u/:userId" element={<PublicSchedule />} />
+        <Route path="/:userId" element={<PublicSchedule />} />
+
         <Route path="*" element={<div className="card">404</div>} />
       </Routes>
     </div>

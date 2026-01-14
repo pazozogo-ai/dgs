@@ -32,11 +32,50 @@ async function ensureUser(tgUser: any) {
   return inserted[0];
 }
 
+async function handleBookingStart(msg: any, nonce: string) {
+  const chatId = msg.chat.id;
+  const rows = await dbGet<any[]>(
+    `booking_nonces?nonce=eq.${encodeURIComponent(nonce)}&select=nonce,status,expires_at,owner_telegram_user_id,owner_user_id,start_at,end_at,client_name,client_comment`
+  );
+  const row = rows[0];
+  if (!row) {
+    await tgSendMessage(chatId, "Заявка не найдена или устарела. Вернись на сайт и выбери слот заново.");
+    return;
+  }
+  if (Date.now() > new Date(row.expires_at).getTime()) {
+    await tgSendMessage(chatId, "Срок подтверждения истёк. Вернись на сайт и выбери слот заново.");
+    return;
+  }
+
+  const user = await ensureUser(msg.from);
+  await dbPatch(
+    `booking_nonces?nonce=eq.${encodeURIComponent(nonce)}`,
+    { client_user_id: user.id, client_telegram_user_id: String(msg.from.id), status: "linked" },
+    "return=minimal"
+  );
+
+  const when = new Date(row.start_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+  const reply_markup = { inline_keyboard: [[{ text: "✅ Подтвердить запись", callback_data: `book:${nonce}` }]] };
+  await tgSendMessage(
+    chatId,
+    `<b>Подтверждение записи</b>\nВремя: <b>${when}</b>\nИмя: <b>${row.client_name}</b>\nКомментарий: ${row.client_comment ? row.client_comment : "—"}\n\nНажми кнопку, чтобы отправить запрос.`,
+    reply_markup
+  );
+}
+
 async function handleStart(msg: any) {
   const chatId = msg.chat.id;
   const text: string = msg.text || "";
   const parts = text.split(" ");
-  const nonce = parts[1];
+  const raw = parts[1];
+
+  // Booking flow: /start b_<nonce>
+  if (raw && String(raw).startsWith("b_")) {
+    await handleBookingStart(msg, String(raw).slice(2));
+    return;
+  }
+
+  const nonce = raw;
 
   if (!nonce) {
     await tgSendMessage(chatId, "Привет! Чтобы войти на сайт, нажми кнопку “Войти через Telegram” на сайте — бот пришлёт ссылку сюда.");
@@ -82,6 +121,16 @@ async function handleLoginConfirm(callback: any, nonce: string) {
     return;
   }
 
+  if (row.status === "consumed") {
+    await tgAnswerCallbackQuery(callback.id, "Уже подтверждено");
+    return;
+  }
+
+  if (row.status !== "linked") {
+    await tgAnswerCallbackQuery(callback.id, "Сначала начни вход на сайте");
+    return;
+  }
+
   const patched = await dbPatch<any[]>(
     `login_nonces?nonce=eq.${encodeURIComponent(nonce)}&status=eq.linked`,
     { status: "consumed" },
@@ -97,13 +146,71 @@ async function handleLoginConfirm(callback: any, nonce: string) {
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
   await dbPost("login_tokens", { token, user_id: row.user_id, telegram_user_id: row.telegram_user_id, status: "active", expires_at: expiresAt }, "return=minimal");
-  await dbPatch(`login_nonces?nonce=eq.${encodeURIComponent(nonce)}`, { status: "consumed" }, "return=minimal");
 
   const base = new URL(process.env.APP_BASE_URL!).origin;
   const link = `${base}/.netlify/functions/authFinish?token=${encodeURIComponent(token)}`;
 
   await tgAnswerCallbackQuery(callback.id, "Ок!");
   await tgSendMessage(chatId, `Готово ✅\nОткрой ссылку для входа:\n${link}`, undefined, { disablePreview: true });
+}
+
+async function handleBookingConfirm(callback: any, nonce: string) {
+  const fromId = String(callback.from.id);
+  const rows = await dbGet<any[]>(`booking_nonces?nonce=eq.${encodeURIComponent(nonce)}&select=*`);
+  const row = rows[0];
+  if (!row) { await tgAnswerCallbackQuery(callback.id, "Не найдено"); return; }
+  if (Date.now() > new Date(row.expires_at).getTime()) { await tgAnswerCallbackQuery(callback.id, "Срок истёк. Выбери время на сайте ещё раз."); return; }
+  if (String(row.client_telegram_user_id) !== fromId) { await tgAnswerCallbackQuery(callback.id, "Это не твоя заявка"); return; }
+  if (row.status === "consumed") { await tgAnswerCallbackQuery(callback.id, "Уже подтверждено"); return; }
+
+  // Create booking (pending) and send approve message to owner
+  const ownerRows = await dbGet<any[]>(`users?id=eq.${row.owner_user_id}&select=id,telegram_user_id,display_name,slug`);
+  const owner = ownerRows[0];
+  if (!owner) { await tgAnswerCallbackQuery(callback.id, "Владелец не найден"); return; }
+
+  let inserted;
+  try {
+    inserted = await dbPost<any[]>("bookings", {
+      owner_user_id: owner.id,
+      owner_telegram_user_id: String(owner.telegram_user_id),
+      client_user_id: row.client_user_id,
+      client_telegram_user_id: String(row.client_telegram_user_id),
+      start_at: row.start_at,
+      end_at: row.end_at,
+      client_name: row.client_name,
+      client_comment: row.client_comment ?? null,
+      status: "pending",
+    });
+  } catch (e: any) {
+    const msg = String(e.message || "");
+    if (msg.includes("23505") || msg.toLowerCase().includes("duplicate")) {
+      await tgAnswerCallbackQuery(callback.id, "Этот слот уже занят. Выбери другой.");
+      return;
+    }
+    throw e;
+  }
+
+  const booking = inserted[0];
+  await dbPatch(`booking_nonces?nonce=eq.${encodeURIComponent(nonce)}`, { status: "consumed", booking_id: booking.id }, "return=minimal");
+
+  const when = new Date(row.start_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+  const ownerText =
+`<b>Новая заявка</b>\n` +
+`К кому: ${owner.display_name ?? owner.slug}\n` +
+`Кто: <b>${row.client_name}</b>\n` +
+`Когда: <b>${when}</b>\n` +
+`Комментарий: ${row.client_comment ? row.client_comment : "—"}\n\n` +
+`Подтвердить?`;
+
+  const reply_markup = { inline_keyboard: [[
+    { text: "✅ OK", callback_data: `approve:${booking.id}` },
+    { text: "❌ Отказ", callback_data: `reject:${booking.id}` }
+  ]]};
+
+  await tgSendMessage(owner.telegram_user_id, ownerText, reply_markup);
+
+  await tgAnswerCallbackQuery(callback.id, "Заявка отправлена");
+  await tgEditMessageText(callback.message.chat.id, callback.message.message_id, callback.message.text + `\n\n<b>✅ Заявка отправлена</b>`);
 }
 
 async function handleBookingAction(callback: any, action: "approve"|"reject", bookingId: string) {
@@ -141,6 +248,7 @@ export const handler: Handler = async (event) => {
       const cb = update.callback_query;
       const data: string = cb.data || "";
       if (data.startsWith("login:")) await handleLoginConfirm(cb, data.slice(6));
+      else if (data.startsWith("book:")) await handleBookingConfirm(cb, data.slice(5));
       else if (data.startsWith("approve:")) await handleBookingAction(cb, "approve", data.slice(8));
       else if (data.startsWith("reject:")) await handleBookingAction(cb, "reject", data.slice(7));
     }

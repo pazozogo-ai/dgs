@@ -4,11 +4,12 @@ import { getJSON, postJSON } from "../lib/api";
 type Profile = {
   id: string;
   display_name: string | null;
-  slug: string;
+  user_id: string; // public id in URL
   timezone: string;
   slot_minutes: number;
   day_start: number;
   day_end: number;
+  work_days: number[]; // 0=Mon .. 6=Sun
 };
 
 export default function Dashboard() {
@@ -18,7 +19,8 @@ export default function Dashboard() {
   React.useEffect(() => {
     (async () => {
       const res = await getJSON<{ ok: true; profile: Profile }>("/.netlify/functions/getProfile");
-      setProfile(res.profile);
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || res.profile.timezone;
+      setProfile({ ...res.profile, timezone: tz });
     })();
   }, []);
 
@@ -37,31 +39,67 @@ export default function Dashboard() {
 
   if (!profile) return <div className="card">Загрузка...</div>;
 
-  const publicUrl = `${window.location.origin}/u/${profile.slug}`;
+  const publicUrl = `${window.location.origin}/${profile.user_id}`;
+
+  function setMinutesPreset(m: number) {
+    setProfile({ ...profile, slot_minutes: m });
+  }
+
+  const dayLabels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+  function toggleWorkDay(idx: number) {
+    const has = profile.work_days.includes(idx);
+    const next = has ? profile.work_days.filter((d) => d !== idx) : [...profile.work_days, idx].sort((a, b) => a - b);
+    setProfile({ ...profile, work_days: next });
+  }
 
   return (
     <div className="grid">
       <div className="card">
-        <h1>Настройки</h1>
+        <div className="sectionHead">
+          <div>
+            <div className="h1">Настройки</div>
+            <div className="sub">Собери удобную ссылку и доступность. Клиент подтвердит запись в Telegram.</div>
+          </div>
+        </div>
 
-        <label className="label">Публичный slug (ссылка)</label>
+        <label className="label">Укажите userID (можете оставить значение по умолчанию)</label>
         <input
           className="input"
-          value={profile.slug}
-          onChange={(e) => setProfile({ ...profile, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, "") })}
+          value={profile.user_id}
+          onChange={(e) => setProfile({ ...profile, user_id: e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, "") })}
         />
+        <div className="hint">Это будет в ссылке: <span className="mono">{window.location.origin}/{profile.user_id}</span></div>
+
+        <div className="divider" />
 
         <label className="label">Таймзона</label>
-        <input className="input" value={profile.timezone} onChange={(e) => setProfile({ ...profile, timezone: e.target.value })} />
+        <div className="pill">Время показано в вашей таймзоне: <b>{profile.timezone}</b></div>
 
-        <label className="label">Длительность слота (мин)</label>
-        <select
-          className="input"
-          value={profile.slot_minutes}
-          onChange={(e) => setProfile({ ...profile, slot_minutes: Number(e.target.value) })}
-        >
-          {[15, 30, 45, 60].map((m) => <option key={m} value={m}>{m}</option>)}
-        </select>
+        <label className="label" style={{ marginTop: 14 }}>Длительность одной консультации</label>
+        <div className="pills" style={{ marginBottom: 10 }}>
+          {[5, 10, 15, 30, 45, 60].map((m) => (
+            <button
+              key={m}
+              className={`pillBtn ${profile.slot_minutes === m ? "active" : ""}`}
+              onClick={() => setMinutesPreset(m)}
+              type="button"
+            >
+              {m} мин
+            </button>
+          ))}
+          <div className="spacer" />
+          <div style={{ minWidth: 120 }}>
+            <input
+              className="input"
+              style={{ margin: 0, height: 42 }}
+              type="number"
+              min={5}
+              step={5}
+              value={profile.slot_minutes}
+              onChange={(e) => setProfile({ ...profile, slot_minutes: Math.max(5, Number(e.target.value || 0)) })}
+            />
+          </div>
+        </div>
 
         <div className="row">
           <div style={{ flex: 1 }}>
@@ -80,13 +118,32 @@ export default function Dashboard() {
           </div>
         </div>
 
+        <label className="label">Рабочие дни</label>
+        <div className="pills">
+          {dayLabels.map((d, idx) => (
+            <button
+              key={d}
+              type="button"
+              className={`pillBtn ${profile.work_days.includes(idx) ? "active" : ""}`}
+              onClick={() => toggleWorkDay(idx)}
+            >
+              {d}
+            </button>
+          ))}
+        </div>
+
         <button className="btn primary" onClick={save} disabled={saving}>
           {saving ? "Сохранение..." : "Сохранить"}
         </button>
       </div>
 
       <div className="card">
-        <h2>Твоя ссылка</h2>
+        <div className="sectionHead">
+          <div>
+            <div className="h1" style={{ fontSize: 22 }}>Твоя ссылка</div>
+            <div className="sub">Кидаешь эту ссылку клиенту — он выбирает день/время и подтверждает запись в Telegram.</div>
+          </div>
+        </div>
         <p className="muted">Кидаешь эту ссылку клиенту — он выбирает слот и отправляет заявку. Подтверждение придёт в Telegram.</p>
         <div className="copybox"><code>{publicUrl}</code></div>
         <a className="btn" href={publicUrl} target="_blank" rel="noreferrer">Открыть расписание</a>

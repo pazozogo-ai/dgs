@@ -9,9 +9,13 @@ create table if not exists public.users (
   slot_minutes int not null default 30,
   day_start int not null default 10,
   day_end int not null default 18,
+  work_days int[] not null default '{0,1,2,3,4}',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Backward-compatible upgrades
+alter table public.users add column if not exists work_days int[] not null default '{0,1,2,3,4}';
 
 create table if not exists public.login_nonces (
   nonce text primary key,
@@ -27,6 +31,22 @@ create table if not exists public.login_tokens (
   user_id uuid not null references public.users(id) on delete cascade,
   telegram_user_id text not null,
   status text not null default 'active',
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.booking_nonces (
+  nonce text primary key,
+  status text not null default 'created',
+  owner_user_id uuid not null references public.users(id) on delete cascade,
+  owner_telegram_user_id text not null,
+  client_user_id uuid references public.users(id) on delete set null,
+  client_telegram_user_id text,
+  start_at timestamptz not null,
+  end_at timestamptz not null,
+  client_name text not null,
+  client_comment text,
+  booking_id uuid,
   expires_at timestamptz not null,
   created_at timestamptz not null default now()
 );
@@ -54,4 +74,5 @@ on public.bookings(owner_user_id, start_at, end_at);
 alter table public.users disable row level security;
 alter table public.login_nonces disable row level security;
 alter table public.login_tokens disable row level security;
+alter table public.booking_nonces disable row level security;
 alter table public.bookings disable row level security;
