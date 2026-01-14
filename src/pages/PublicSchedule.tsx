@@ -96,8 +96,13 @@ export default function PublicSchedule() {
       setTgLink(null);
       setSelectedSlot(null);
       try {
-        const res = await getJSON<Api>(`/.netlify/functions/getPublicSchedule?userId=${encodeURIComponent(userId || "")}`);
-        setData(res);
+        const res: any = await getJSON<any>(`/.netlify/functions/getPublicSchedule?userId=${encodeURIComponent(userId || "")}`);
+        // API может вернуть {error: ...} без поля ok. Защищаемся от падений рендера.
+        if (!res || res.ok !== true || !res.profile) {
+          setData(null);
+          return;
+        }
+        setData(res as Api);
 
         // Default selected day: today (or next available)
         const today = startOfDay(new Date());
@@ -111,8 +116,18 @@ export default function PublicSchedule() {
     })();
   }, [userId]);
 
-  if (loading) return <div className="card step step1">Загрузка...</div>;
-  if (!data) return <div className="card step step2">Пользователь не найден</div>;
+  if (loading)
+    return (
+      <div className="container narrow">
+        <div className="card step step1">Загрузка...</div>
+      </div>
+    );
+  if (!data)
+    return (
+      <div className="container narrow">
+        <div className="card step step2">Расписание не найдено</div>
+      </div>
+    );
 
   const profile = data.profile;
   const busySet = new Set(
