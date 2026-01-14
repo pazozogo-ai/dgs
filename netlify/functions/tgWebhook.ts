@@ -72,12 +72,31 @@ async function handleLoginConfirm(callback: any, nonce: string) {
 
   const rows = await dbGet<any[]>(`login_nonces?nonce=eq.${encodeURIComponent(nonce)}&select=nonce,status,telegram_user_id,user_id,expires_at`);
   const row = rows[0];
-  if (!row || row.status !== "linked" || String(row.telegram_user_id) !== fromId) {
-    await tgAnswerCallbackQuery(callback.id, "Не найдено. Перейди с сайта ещё раз.");
+  if (!row || String(row.telegram_user_id) !== fromId) {
+    await tgAnswerCallbackQuery(callback.id, "Ссылка недействительна");
+    return;
+  }
+
+  if (row.status === "consumed") {
+    await tgAnswerCallbackQuery(callback.id, "Вход уже подтверждён");
+    return;
+  }
+
+  if (row.status !== "linked") {
+    await tgAnswerCallbackQuery(callback.id, "Сначала начни вход на сайте");
     return;
   }
   if (Date.now() > new Date(row.expires_at).getTime()) {
     await tgAnswerCallbackQuery(callback.id, "Срок истёк. Сгенерируй вход заново на сайте.");
+    return;
+  }
+
+  const existing = await dbGet<any[]>(
+    `login_tokens?user_id=eq.${row.user_id}&status=eq.active&expires_at=gt.${encodeURIComponent(new Date().toISOString())}`
+  );
+
+  if (existing.length > 0) {
+    await tgAnswerCallbackQuery(callback.id, "Ссылка уже отправлена");
     return;
   }
 
