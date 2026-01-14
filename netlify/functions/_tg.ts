@@ -1,11 +1,22 @@
 const BOT_TOKEN = process.env.TG_BOT_TOKEN!;
 const API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
-export async function tgSendMessage(chatId: string | number, text: string, replyMarkup?: any) {
+export async function tgSendMessage(
+  chatId: string | number,
+  text: string,
+  replyMarkup?: any,
+  opts?: { disablePreview?: boolean }
+) {
   const res = await fetch(`${API}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML", ...(replyMarkup ? { reply_markup: replyMarkup } : {}) }),
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: "HTML",
+      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+      ...(opts?.disablePreview ? { disable_web_page_preview: true } : {}),
+    }),
   });
   if (!res.ok) throw new Error(`TG sendMessage failed: ${res.status} ${await res.text()}`);
   return res.json();

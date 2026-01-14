@@ -103,7 +103,7 @@ async function handleLoginConfirm(callback: any, nonce: string) {
   const link = `${base}/.netlify/functions/authFinish?token=${encodeURIComponent(token)}`;
 
   await tgAnswerCallbackQuery(callback.id, "Ок!");
-  await tgSendMessage(chatId, `Готово ✅\nОткрой ссылку для входа:\n${link}`);
+  await tgSendMessage(chatId, `Готово ✅\nОткрой ссылку для входа:\n${link}`, undefined, { disablePreview: true });
 }
 
 async function handleBookingAction(callback: any, action: "approve"|"reject", bookingId: string) {
