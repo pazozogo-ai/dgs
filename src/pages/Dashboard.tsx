@@ -58,7 +58,7 @@ export default function Dashboard() {
         <div className="sectionHead">
           <div>
             <div className="h1">Настройки</div>
-            <div className="sub">Собери удобную ссылку и доступность. Клиент подтвердит запись в Telegram.</div>
+            <div className="sub">Настройте ссылку и доступность. Клиент подтвердит запись в Telegram.</div>
           </div>
         </div>
 
@@ -73,7 +73,7 @@ export default function Dashboard() {
         <div className="divider" />
 
         <label className="label">Таймзона</label>
-        <div className="pill">Время показано в вашей таймзоне: <b>{profile.timezone}</b></div>
+        <div className="pill">Время показано в Вашей таймзоне: <b>{profile.timezone}</b></div>
 
         <label className="label" style={{ marginTop: 14 }}>Длительность одной консультации</label>
         <div className="pills" style={{ marginBottom: 10 }}>
@@ -140,11 +140,11 @@ export default function Dashboard() {
       <div className="card">
         <div className="sectionHead">
           <div>
-            <div className="h1" style={{ fontSize: 22 }}>Твоя ссылка</div>
-            <div className="sub">Кидаешь эту ссылку клиенту — он выбирает день/время и подтверждает запись в Telegram.</div>
+            <div className="h1" style={{ fontSize: 22 }}>Ваша ссылка</div>
+            <div className="sub">Отправьте эту ссылку клиенту — он выбирает день/время и подтверждает запись в Telegram.</div>
           </div>
         </div>
-        <p className="muted">Кидаешь эту ссылку клиенту — он выбирает слот и отправляет заявку. Подтверждение придёт в Telegram.</p>
+        <p className="muted">Отправьте эту ссылку клиенту — он выбирает слот и отправляет заявку. Подтверждение придёт в Telegram.</p>
         <div className="copybox"><code>{publicUrl}</code></div>
         <a className="btn" href={publicUrl} target="_blank" rel="noreferrer">Открыть расписание</a>
       </div>

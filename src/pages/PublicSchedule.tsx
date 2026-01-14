@@ -111,8 +111,8 @@ export default function PublicSchedule() {
     })();
   }, [userId]);
 
-  if (loading) return <div className="card">Загрузка...</div>;
-  if (!data) return <div className="card">Пользователь не найден</div>;
+  if (loading) return <div className="card step step1">Загрузка...</div>;
+  if (!data) return <div className="card step step2">Пользователь не найден</div>;
 
   const profile = data.profile;
   const busySet = new Set(
@@ -133,6 +133,21 @@ export default function PublicSchedule() {
   }
 
   const daySlots = buildDaySlots({ date: selectedDay, profile })
+
+  const [showAllSlots, setShowAllSlots] = React.useState(false);
+
+  const slotGroups = React.useMemo(() => {
+    const groups: Record<string, { startAt: Date; endAt: Date }[]> = {};
+    for (const sl of daySlots) {
+      const h = sl.startAt.getHours().toString().padStart(2, "0");
+      groups[h] = groups[h] || [];
+      groups[h].push(sl);
+    }
+    return Object.entries(groups)
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([hour, slots]) => ({ hour, slots }));
+  }, [daySlots]);
+
     .filter((s) => s.endAt.getTime() > Date.now())
     .filter((s) => !busySet.has(`${s.startAt.toISOString()}__${s.endAt.toISOString()}`));
 
@@ -174,7 +189,7 @@ export default function PublicSchedule() {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card step step3">
         <div className="cardHeader">
           <div>
             <div className="title">1. Выберите день</div>
@@ -207,6 +222,7 @@ export default function PublicSchedule() {
                 disabled={disabled}
                 onClick={() => {
                   setSelectedDay(startOfDay(d));
+                  setShowAllSlots(false);
                   setSelectedSlot(null);
                   setForm({ name: "", comment: "" });
                   setTgLink(null);
@@ -233,32 +249,42 @@ export default function PublicSchedule() {
         {daySlots.length === 0 ? (
           <div className="sub">На выбранный день свободных слотов нет. Выберите другую дату.</div>
         ) : (
-          <div className="slotChips">
-            {daySlots.slice(0, 24).map((s) => {
-              const key = s.startAt.toISOString();
-              const sel = selectedSlot?.startAt.toISOString() === key;
-              const label = s.startAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  className={`slotChip ${sel ? "selected" : ""}`}
-                  onClick={() => {
-                    setSelectedSlot(s);
-                    setTgLink(null);
-                  }}
-                >
-                  <span>{label}</span>
-                  <span className="meta">{profile.slot_minutes} мин</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
+          <div className="slotGroups">
+            {slotGroups.slice(0, showAllSlots ? slotGroups.length : 3).map((g) => (
+              <div key={g.hour}>
+                <div className="slotGroupHeader">
+                  <div className="slotGroupTitle">{g.hour}:00</div>
+                </div>
+                <div className="slotGroupChips">
+                  {(showAllSlots ? g.slots : g.slots.slice(0, 8)).map((sl) => {
+                    const key = sl.startAt.toISOString();
+                    const sel = selectedSlot?.startAt.toISOString() === key;
+                    const label = sl.startAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        className={`slotChip ${sel ? "selected" : ""}`}
+                        onClick={() => {
+                          setSelectedSlot(sl);
+                          setTgLink(null);
+                        }}
+                      >
+                        <span>{label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
 
-        {daySlots.length > 24 && (
-          <div className="hint" style={{ marginTop: 10 }}>
-            Показаны первые 24 слота. Если Вам нужно другое время — попробуйте соседнюю дату.
+            {slotGroups.length > 3 && (
+              <button className="btn ghost" type="button" onClick={() => setShowAllSlots((v) => !v)}>
+                {showAllSlots ? "Показать меньше" : "Показать больше времени"}
+              </button>
+            )}
+
+            <div className="hint">Свободные слоты показаны на выбранный день. Если Вам нужно другое время — попробуйте соседнюю дату.</div>
           </div>
         )}
       </div>
@@ -275,9 +301,12 @@ export default function PublicSchedule() {
           <div className="sub">Сначала выберите день и время.</div>
         ) : (
           <div className="stack" style={{ gap: 10 }}>
-            <div className="badge" style={{ width: "fit-content" }}>
-              🗓 {formatDayTitle(selectedDay)} • {selectedSlot.startAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-            </div>
+            <div className="summaryBox">
+  <div className="summaryLabel">Вы выбрали</div>
+  <div className="summaryValue">
+    {formatDayTitle(selectedDay)} · {selectedSlot.startAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {profile.slot_minutes} мин
+  </div>
+</div>
 
             <label className="label">Ваше имя</label>
             <input
@@ -295,7 +324,7 @@ export default function PublicSchedule() {
               onChange={(e) => setForm({ ...form, comment: e.target.value })}
             />
 
-            <button className="btn primary" disabled={!form.name.trim() || sending} onClick={startTelegramConfirm}>
+            <button className="btn primary big" disabled={!form.name.trim() || sending} onClick={startTelegramConfirm}>
               {sending ? "Подготовка..." : "Подтвердить в Telegram"}
             </button>
 
@@ -305,7 +334,7 @@ export default function PublicSchedule() {
               </a>
             )}
 
-            <div className="hint">Сервис dialogs.tech не запрашивает пароль — подтверждение происходит в Telegram.</div>
+            <div className="hint">Сервис dialogs.tech не запрашивает пароль — подтверждение происходит через Telegram.</div>
           </div>
         )}
       </div>
