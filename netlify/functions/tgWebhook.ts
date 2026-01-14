@@ -77,31 +77,24 @@ async function handleLoginConfirm(callback: any, nonce: string) {
     return;
   }
 
-  if (row.status === "consumed") {
-    await tgAnswerCallbackQuery(callback.id, "Вход уже подтверждён");
-    return;
-  }
-
-  if (row.status !== "linked") {
-    await tgAnswerCallbackQuery(callback.id, "Сначала начни вход на сайте");
-    return;
-  }
   if (Date.now() > new Date(row.expires_at).getTime()) {
-    await tgAnswerCallbackQuery(callback.id, "Срок истёк. Сгенерируй вход заново на сайте.");
+    await tgAnswerCallbackQuery(callback.id, "Срок истёк. Начни вход заново на сайте.");
     return;
   }
 
-  const existing = await dbGet<any[]>(
-    `login_tokens?user_id=eq.${row.user_id}&status=eq.active&expires_at=gt.${encodeURIComponent(new Date().toISOString())}`
+  const patched = await dbPatch<any[]>(
+    `login_nonces?nonce=eq.${encodeURIComponent(nonce)}&status=eq.linked`,
+    { status: "consumed" },
+    "return=representation"
   );
 
-  if (existing.length > 0) {
-    await tgAnswerCallbackQuery(callback.id, "Ссылка уже отправлена");
+  if (!patched || patched.length === 0) {
+    await tgAnswerCallbackQuery(callback.id, "Уже подтверждено");
     return;
   }
 
   const token = randomToken(20);
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
   await dbPost("login_tokens", { token, user_id: row.user_id, telegram_user_id: row.telegram_user_id, status: "active", expires_at: expiresAt }, "return=minimal");
   await dbPatch(`login_nonces?nonce=eq.${encodeURIComponent(nonce)}`, { status: "consumed" }, "return=minimal");
