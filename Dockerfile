@@ -9,8 +9,13 @@ RUN npm install
 # Copy source
 COPY . .
 
-# Install Netlify CLI to run functions + frontend locally
-RUN npm install -g netlify-cli
+# Install specific Netlify CLI version (pre-edge-fns issues on alpine/arm)
+RUN npm install -g netlify-cli@17.36.2
+
+# Install Deno (needed for Netlify edge runtime)
+RUN apk add --no-cache curl && \
+    curl -fsSL https://deno.land/install.sh | sh -s -- -A /usr/local && \
+    ln -sf /usr/local/bin/deno /usr/bin/deno
 
 EXPOSE 8888
 
