@@ -1,0 +1,11 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: sched-links-tg
+    ports:
+      - "8888:8888"
+    env_file:
+      - .env
+    command: ["netlify", "dev", "--port=8888", "--host=0.0.0.0"]
