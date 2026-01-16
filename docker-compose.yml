@@ -8,4 +8,7 @@ services:
       - "8888:8888"
     env_file:
       - .env
-    command: ["sh", "-c", "NETLIFY_DEV_HOST=0.0.0.0 netlify dev --port=8888"]
+    environment:
+      NETLIFY_DEV_DISABLE_EDGE_HANDLERS: "1"
+      NETLIFY_DEV_HOST: "0.0.0.0"
+    command: ["sh", "-c", "NETLIFY_DEV_DISABLE_EDGE_HANDLERS=1 NETLIFY_DEV_HOST=0.0.0.0 netlify dev --port=8888"]
