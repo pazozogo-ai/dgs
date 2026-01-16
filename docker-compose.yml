@@ -8,4 +8,4 @@ services:
       - "8888:8888"
     env_file:
       - .env
-    command: ["netlify", "dev", "--port=8888", "--host=0.0.0.0"]
+    command: ["sh", "-c", "NETLIFY_DEV_HOST=0.0.0.0 netlify dev --port=8888"]

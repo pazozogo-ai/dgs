@@ -15,4 +15,4 @@ RUN npm install -g netlify-cli
 EXPOSE 8888
 
 # Run Netlify Dev (serves Vite dev server + Netlify Functions)
-CMD ["netlify", "dev", "--port=8888", "--host=0.0.0.0"]
+CMD ["sh", "-c", "NETLIFY_DEV_HOST=0.0.0.0 netlify dev --port=8888"]
