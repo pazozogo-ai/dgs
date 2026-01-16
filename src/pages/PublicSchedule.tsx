@@ -160,17 +160,19 @@ export default function PublicSchedule() {
     .filter((s) => s.endAt.getTime() > Date.now())
     .filter((s) => !busySet.has(`${s.startAt.toISOString()}__${s.endAt.toISOString()}`));
 
-  const slotGroups = React.useMemo(() => {
+  // IMPORTANT: don't use hooks below early returns (loading / not found),
+  // иначе в проде получаем "Rendered more hooks than during the previous render".
+  // Тут вычисление дешёвое, поэтому делаем без useMemo.
+  const slotGroups = (() => {
     const groups: Record<string, { startAt: Date; endAt: Date }[]> = {};
     for (const sl of daySlots) {
       const h = sl.startAt.getHours().toString().padStart(2, "0");
-      groups[h] = groups[h] || [];
-      groups[h].push(sl);
+      (groups[h] ||= []).push(sl);
     }
     return Object.entries(groups)
       .sort(([a], [b]) => (a < b ? -1 : 1))
       .map(([hour, slots]) => ({ hour, slots }));
-  }, [daySlots]);
+  })();
 
   async function startTelegramConfirm() {
     if (!selectedSlot) return;
