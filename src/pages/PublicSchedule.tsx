@@ -206,33 +206,33 @@ export default function PublicSchedule() {
         <h1 className="title">Запись к {ownerName}</h1>
         <p className="lead">Выберите удобное время. Подтверждение записи — в Telegram.</p>
 
-        <div className="stepper">
-          <button
-            type="button"
-            className={`stepItem ${currentStep >= 1 ? "done" : ""} ${currentStep === 1 ? "current" : ""}`}
-            onClick={() => scrollToRef(dayCardRef)}
-            aria-label="Шаг 1: выбрать день"
-          >
+	        <div className="stepper">
+	          <button
+	            type="button"
+	            className={`stepItem ${currentStep >= 1 ? "done" : ""} ${currentStep === 1 ? "current" : ""}`}
+	            onClick={() => scrollToRef(dayCardRef)}
+	            aria-label="Шаг 1: выбрать день"
+	          >
             <span className="stepNum">1</span>
             <span className="stepText">День</span>
-          </button>
-          <span className={`stepLine ${currentStep >= 2 ? "done" : ""}`} aria-hidden />
-          <button
-            type="button"
-            className={`stepItem ${currentStep >= 2 ? "done" : ""} ${currentStep === 2 ? "current" : ""}`}
-            onClick={() => scrollToRef(timeCardRef)}
-            aria-label="Шаг 2: выбрать время"
-          >
+	          </button>
+	          <span className={`stepLine ${currentStep >= 2 ? "done" : ""}`} aria-hidden />
+	          <button
+	            type="button"
+	            className={`stepItem ${currentStep >= 2 ? "done" : ""} ${currentStep === 2 ? "current" : ""}`}
+	            onClick={() => scrollToRef(timeCardRef)}
+	            aria-label="Шаг 2: выбрать время"
+	          >
             <span className="stepNum">2</span>
             <span className="stepText">Время</span>
-          </button>
-          <span className={`stepLine ${currentStep >= 3 ? "done" : ""}`} aria-hidden />
-          <button
-            type="button"
-            className={`stepItem ${currentStep >= 3 ? "done" : ""} ${currentStep === 3 ? "current" : ""}`}
-            onClick={() => scrollToRef(confirmCardRef)}
-            aria-label="Шаг 3: подтвердить запись"
-          >
+	          </button>
+	          <span className={`stepLine ${currentStep >= 3 ? "done" : ""}`} aria-hidden />
+	          <button
+	            type="button"
+	            className={`stepItem ${currentStep >= 3 ? "done" : ""} ${currentStep === 3 ? "current" : ""}`}
+	            onClick={() => scrollToRef(confirmCardRef)}
+	            aria-label="Шаг 3: подтвердить запись"
+	          >
             <span className="stepNum">3</span>
             <span className="stepText">Подтвердить</span>
           </button>

@@ -7,8 +7,50 @@ import Approvals from "./pages/Approvals";
 import { getJSON, postJSON } from "./lib/api";
 
 type Me =
-  | { ok: true; user: { id: string; telegram_user_id: string; display_name: string | null; slug: string; timezone: string; slot_minutes: number; day_start: number; day_end: number } }
+  | {
+      ok: true;
+      user: {
+        id: string;
+        telegram_user_id: string;
+        display_name: string | null;
+        slug: string;
+        timezone: string;
+        slot_minutes: number;
+        day_start: number;
+        day_end: number;
+      };
+    }
   | { ok: false };
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+  componentDidCatch(err: Error) {
+    // eslint-disable-next-line no-console
+    console.error("UI crashed:", err);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="container narrow">
+          <div className="card step step2">
+            <div className="title">Страница упала</div>
+            <div className="sub">Откройте DevTools Console и пришлите ошибку.</div>
+            <pre className="codeBlock" style={{ marginTop: 12, whiteSpace: "pre-wrap" }}>
+              {String(this.state.error.message || this.state.error)}
+            </pre>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function useMe() {
   const [me, setMe] = React.useState<Me | null>(null);
@@ -36,11 +78,17 @@ function Topbar({ authed, onLogout }: { authed: boolean; onLogout: () => void })
         <div className="spacer" />
         {authed ? (
           <>
-            <Link to="/approvals" className="navLink">Заявки</Link>
-            <button className="btn" onClick={onLogout}>Выйти</button>
+            <Link to="/approvals" className="navLink">
+              Заявки
+            </Link>
+            <button className="btn" onClick={onLogout}>
+              Выйти
+            </button>
           </>
         ) : (
-          <Link to="/login" className="navLink">Войти</Link>
+          <Link to="/login" className="navLink">
+            Войти
+          </Link>
         )}
       </div>
     </div>
@@ -57,23 +105,30 @@ export default function App() {
     window.location.reload();
   }
 
-  if (me === null) return <div className="app-shell"><div className="card">Загрузка...</div></div>;
+  if (me === null)
+    return (
+      <div className="app-shell">
+        <div className="card">Загрузка...</div>
+      </div>
+    );
   const authed = me.ok === true;
 
   return (
     <div className="app-shell">
       <Topbar authed={authed} onLogout={logout} />
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={authed ? <Dashboard /> : <Navigate to="/login" replace />} />
-        <Route path="/approvals" element={authed ? <Approvals /> : <Navigate to="/login" replace />} />
+      <ErrorBoundary>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={authed ? <Dashboard /> : <Navigate to="/login" replace />} />
+          <Route path="/approvals" element={authed ? <Approvals /> : <Navigate to="/login" replace />} />
 
-        {/* Public booking page: best UX is dialogs.tech/<userID>. Keep /u/:slug for backwards compatibility. */}
-        <Route path="/u/:userId" element={<PublicSchedule />} />
-        <Route path="/:userId" element={<PublicSchedule />} />
+          {/* Public booking page: best UX is dialogs.tech/<userID>. Keep /u/:slug for backwards compatibility. */}
+          <Route path="/u/:userId" element={<PublicSchedule />} />
+          <Route path="/:userId" element={<PublicSchedule />} />
 
-        <Route path="*" element={<div className="card">404</div>} />
-      </Routes>
-    </div>
+          <Route path="*" element={<div className="card">404</div>} />
+        </Routes>
+      </ErrorBoundary>
+</div>
   );
 }
