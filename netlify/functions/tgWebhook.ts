@@ -238,6 +238,20 @@ async function handleBookingAction(callback: any, action: "approve"|"reject", bo
 
 export const handler: Handler = async (event) => {
   try {
+    // Optional webhook protection (recommended):
+    // Set TG_WEBHOOK_SECRET and configure Telegram webhook with secret_token.
+    const expected = process.env.TG_WEBHOOK_SECRET;
+    if (expected) {
+      const got = String(
+        event.headers["x-telegram-bot-api-secret-token"] ||
+          event.headers["X-Telegram-Bot-Api-Secret-Token"] ||
+          ""
+      );
+      if (!got || got !== expected) {
+        return json(401, { ok: false, error: "Unauthorized" });
+      }
+    }
+
     const update = JSON.parse(event.body || "{}");
 
     if (update.message?.text) {

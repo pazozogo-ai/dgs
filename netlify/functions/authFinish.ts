@@ -6,6 +6,9 @@ type LoginTokenRow = { token: string; user_id: string; telegram_user_id: string;
 
 export const handler: Handler = async (event) => {
   try {
+    const xfProto = String(event.headers["x-forwarded-proto"] || event.headers["X-Forwarded-Proto"] || "").toLowerCase();
+    const isHttps = xfProto.split(",")[0].trim() === "https";
+
     const ua = String(event.headers["user-agent"] || event.headers["User-Agent"] || "").toLowerCase();
     const isPreviewBot = ua.includes("telegrambot") || ua.includes("discordbot") || ua.includes("slackbot") || ua.includes("facebookexternalhit") || ua.includes("whatsapp");
 
@@ -30,7 +33,9 @@ export const handler: Handler = async (event) => {
     await dbPatch(`login_tokens?token=eq.${encodeURIComponent(token)}`, { status: "consumed" }, "return=minimal");
 
     const jwt = signJWT({ sub: row.user_id, tg: row.telegram_user_id }, process.env.APP_JWT_SECRET!, 60 * 60 * 24 * 30);
-    const cookie = setCookieHeader("sl_session", jwt, { httpOnly: true, secure: true, sameSite: "Lax", path: "/", maxAge: 60 * 60 * 24 * 30 });
+    // In local dev (http://localhost), Secure cookies won't be stored by the browser.
+    // In production (Netlify), requests come with x-forwarded-proto=https.
+    const cookie = setCookieHeader("sl_session", jwt, { httpOnly: true, secure: isHttps, sameSite: "Lax", path: "/", maxAge: 60 * 60 * 24 * 30 });
 
     return {
       statusCode: 302,

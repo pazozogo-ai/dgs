@@ -52,7 +52,8 @@ a { color: inherit; text-decoration: none; }
 }
 .spacer { flex: 1; }
 .navLink { color: rgba(233,238,252,.86); font-weight: 600; }
-.navLink:hover { color: #fff; }
+.navLink { padding: 8px 10px; border-radius: 12px; }
+.navLink:hover { color: #fff; background: rgba(255,255,255,.05); }
 
 /* Cards */
 .card {
@@ -66,6 +67,22 @@ a { color: inherit; text-decoration: none; }
 .h1 { font-size: 34px; font-weight: 850; letter-spacing: -.4px; margin: 0 0 6px; }
 .h2 { font-size: 20px; font-weight: 800; margin: 0; }
 .subtitle { color: rgba(233,238,252,.68); font-size: 14px; line-height: 1.45; }
+
+/* Typography helpers used across pages */
+.title { font-size: 16px; font-weight: 900; margin: 0 0 6px; letter-spacing: -.1px; }
+.sub { color: rgba(233,238,252,.72); font-size: 13px; line-height: 1.45; }
+.hint { color: rgba(233,238,252,.62); font-size: 12px; line-height: 1.4; }
+.muted { color: rgba(233,238,252,.62); }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+.divider {
+  height: 1px;
+  background: rgba(255,255,255,.08);
+  margin: 14px 0;
+}
+
+.sectionHead { display:flex; align-items:flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.stack { display:flex; flex-direction: column; }
 
 .grid2 { display:grid; grid-template-columns: 1.1fr .9fr; gap: 16px; }
 @media (max-width: 900px){ .grid2 { grid-template-columns: 1fr; } }
@@ -164,6 +181,17 @@ a { color: inherit; text-decoration: none; }
   box-shadow: 0 0 16px rgba(34,211,238,.35);
 }
 
+/* Alias: some pages use .dot instead of .calDot */
+.dot { 
+  position:absolute;
+  bottom: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(34,211,238,.85);
+  box-shadow: 0 0 16px rgba(34,211,238,.35);
+}
+
 /* Slots */
 .slotList { display:flex; flex-direction: column; gap: 8px; margin-top: 10px; }
 .slotBtn {
@@ -194,19 +222,8 @@ a { color: inherit; text-decoration: none; }
   .h1 { font-size: 28px; }
   .topbarInner { padding: 12px 14px; }
   .container { padding: 14px; }
-  .calDay {
-  height: 40px;
-  border-radius: 12px;
-  background: rgba(255,255,255,.035);
-  border: 1px solid rgba(255,255,255,.07);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  position: relative;
-  font-weight: 800;
-  font-size: 13px;
-}
+  .card { padding: 16px; border-radius: 16px; }
+  .calDay { height: 38px; border-radius: 12px; }
 }
 
 
@@ -308,40 +325,6 @@ a { color: inherit; text-decoration: none; }
 .stepTitle { font-size: 16px; font-weight: 900; margin: 0 0 8px; }
 .stepHint { margin: 0; color: rgba(233,238,252,.72); font-size: 13px; line-height: 1.45; }
 
-/* Mobile: more breathing room */
-@media (max-width: 560px) {
-  .container { padding: 14px; }
-  .card { padding: 14px; border-radius: 16px; }
-  .calDay {
-  height: 40px;
-  border-radius: 12px;
-  background: rgba(255,255,255,.035);
-  border: 1px solid rgba(255,255,255,.07);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  position: relative;
-  font-weight: 800;
-  font-size: 13px;
-}
-  .slotChip {
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.04);
-  color: rgba(233,238,252,.92);
-  padding: 9px 10px;
-  border-radius: 12px;
-  cursor: pointer;
-  font-weight: 850;
-  min-width: 72px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap: 8px;
-}
-}
-
-
 /* Slot groups */
 .slotGroups { display:flex; flex-direction: column; gap: 12px; margin-top: 10px; }
 .slotGroupHeader { display:flex; align-items:center; justify-content: space-between; margin-top: 2px; }
@@ -368,10 +351,67 @@ a { color: inherit; text-decoration: none; }
 
 @media (max-width: 720px) {
   .calDay { height: 38px; }
-  .btn { width: 100%; justify-content: center; }
+  .card .btn { width: 100%; justify-content: center; }
 }
 
 /* Step hierarchy */
 .card.step1 { background: rgba(12, 16, 26, .80); border-color: rgba(255,255,255,.08); }
 .card.step2 { background: rgba(12, 16, 26, .72); }
 .card.step3 { background: rgba(12, 16, 26, .68); }
+
+/* --- Patch: wow stepper v2 --- */
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.stepItem {
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  color: rgba(233,238,252,.92);
+  padding: 8px 10px;
+  border-radius: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 850;
+}
+.stepItem:hover { filter: brightness(1.08); }
+.stepItem.current {
+  border-color: rgba(34,211,238,.35);
+  background: rgba(34,211,238,.10);
+  box-shadow: 0 0 0 3px rgba(34,211,238,.10);
+}
+.stepItem.done .stepNum {
+  background: rgba(34,211,238,.16);
+  border-color: rgba(34,211,238,.35);
+}
+.stepNum {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.04);
+  font-size: 12px;
+  font-weight: 900;
+}
+.stepText { font-size: 13px; }
+.stepLine {
+  height: 1px;
+  width: 48px;
+  background: rgba(255,255,255,.10);
+  border-radius: 999px;
+}
+.stepLine.done { background: rgba(34,211,238,.35); }
+
+@media (max-width: 560px) {
+  .stepLine { display: none; }
+  .stepper { gap: 8px; }
+  .stepItem { flex: 1; justify-content: center; }
+}

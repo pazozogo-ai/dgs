@@ -28,16 +28,21 @@ function useMe() {
 function Topbar({ authed, onLogout }: { authed: boolean; onLogout: () => void }) {
   return (
     <div className="topbar">
-      <Link to="/" className="brand">dialogs.tech</Link>
-      <div className="spacer" />
-      {authed ? (
-        <>
-          <Link to="/approvals">Заявки</Link>
-          <button className="btn" onClick={onLogout}>Выйти</button>
-        </>
-      ) : (
-        <Link to="/login">Войти</Link>
-      )}
+      <div className="topbarInner">
+        <Link to="/" className="brand">
+          <span className="logoDot" aria-hidden />
+          dialogs.tech
+        </Link>
+        <div className="spacer" />
+        {authed ? (
+          <>
+            <Link to="/approvals" className="navLink">Заявки</Link>
+            <button className="btn" onClick={onLogout}>Выйти</button>
+          </>
+        ) : (
+          <Link to="/login" className="navLink">Войти</Link>
+        )}
+      </div>
     </div>
   );
 }

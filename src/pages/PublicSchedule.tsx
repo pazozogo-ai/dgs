@@ -86,9 +86,18 @@ export default function PublicSchedule() {
   const [month, setMonth] = React.useState(() => new Date());
   const [selectedDay, setSelectedDay] = React.useState(() => startOfDay(new Date()));
   const [selectedSlot, setSelectedSlot] = React.useState<{ startAt: Date; endAt: Date } | null>(null);
+  const [showAllSlots, setShowAllSlots] = React.useState(false);
   const [form, setForm] = React.useState({ name: "", comment: "" });
   const [tgLink, setTgLink] = React.useState<string | null>(null);
   const [sending, setSending] = React.useState(false);
+
+  const dayCardRef = React.useRef<HTMLDivElement | null>(null);
+  const timeCardRef = React.useRef<HTMLDivElement | null>(null);
+  const confirmCardRef = React.useRef<HTMLDivElement | null>(null);
+
+  function scrollToRef(ref: React.RefObject<HTMLElement>) {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   React.useEffect(() => {
     (async () => {
@@ -150,7 +159,6 @@ export default function PublicSchedule() {
   const daySlots = buildDaySlots({ date: selectedDay, profile })
     .filter((s) => s.endAt.getTime() > Date.now())
     .filter((s) => !busySet.has(`${s.startAt.toISOString()}__${s.endAt.toISOString()}`));
-  const [showAllSlots, setShowAllSlots] = React.useState(false);
 
   const slotGroups = React.useMemo(() => {
     const groups: Record<string, { startAt: Date; endAt: Date }[]> = {};
@@ -188,6 +196,8 @@ export default function PublicSchedule() {
   }
 
   const ownerName = profile.display_name ?? profile.user_id ?? profile.slug;
+  const deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone || profile.timezone;
+  const currentStep = selectedSlot ? 3 : 2;
 
   
   return (
@@ -195,14 +205,34 @@ export default function PublicSchedule() {
       <div className="pageHeader">
         <h1 className="title">Запись к {ownerName}</h1>
         <p className="lead">Выберите удобное время. Подтверждение записи — в Telegram.</p>
+
+        <div className="stepper">
+          <button type="button" className={\`stepItem ${currentStep >= 1 ? "done" : ""} ${currentStep === 1 ? "current" : ""}\`} onClick={() => scrollToRef(dayCardRef)} aria-label="Шаг 1: выбрать день">
+            <span className="stepNum">1</span>
+            <span className="stepText">День</span>
+          </button>
+          <span className={\`stepLine ${currentStep >= 2 ? "done" : ""}\`} aria-hidden />
+          <button type="button" className={\`stepItem ${currentStep >= 2 ? "done" : ""} ${currentStep === 2 ? "current" : ""}\`} onClick={() => scrollToRef(timeCardRef)} aria-label="Шаг 2: выбрать время">
+            <span className="stepNum">2</span>
+            <span className="stepText">Время</span>
+          </button>
+          <span className={\`stepLine ${currentStep >= 3 ? "done" : ""}\`} aria-hidden />
+          <button type="button" className={\`stepItem ${currentStep >= 3 ? "done" : ""} ${currentStep === 3 ? "current" : ""}\`} onClick={() => scrollToRef(confirmCardRef)} aria-label="Шаг 3: подтвердить запись">
+            <span className="stepNum">3</span>
+            <span className="stepText">Подтвердить</span>
+          </button>
+        </div>
         <div className="kvRow" style={{ marginTop: 10 }}>
           <span className="badge">⏱ {profile.slot_minutes} мин</span>
           <span className="badge">🕒 {profile.day_start}:00—{profile.day_end}:00</span>
-          <span className="badge">🌍 Ваша таймзона: <b>{Intl.DateTimeFormat().resolvedOptions().timeZone || profile.timezone}</b></span>
+          <span className="badge">🌍 Время показано в Вашей таймзоне: <b>{deviceTz}</b></span>
+          {profile.timezone && profile.timezone !== deviceTz && (
+            <span className="badge">🧭 Таймзона владельца: <b>{profile.timezone}</b></span>
+          )}
         </div>
       </div>
 
-      <div className="card step step3">
+      <div ref={dayCardRef} className="card step step1">
         <div className="cardHeader">
           <div>
             <div className="title">1. Выберите день</div>
@@ -249,9 +279,20 @@ export default function PublicSchedule() {
         </div>
 
         <div className="hint" style={{ marginTop: 10 }}>Доступность показывается на ближайшие 30 дней.</div>
+
+        <div className="row" style={{ marginTop: 12, justifyContent: "flex-end" }}>
+          <button
+            className="btn primary"
+            type="button"
+            disabled={daySlots.length === 0}
+            onClick={() => scrollToRef(timeCardRef)}
+          >
+            Дальше: выбрать время →
+          </button>
+        </div>
       </div>
 
-      <div className="card">
+      <div ref={timeCardRef} className="card step step2">
         <div className="cardHeader">
           <div>
             <div className="title">2. Выберите время</div>
@@ -281,6 +322,8 @@ export default function PublicSchedule() {
                         onClick={() => {
                           setSelectedSlot(sl);
                           setTgLink(null);
+                          // UX: after choosing a time, guide the user to the confirmation section
+                          setTimeout(() => scrollToRef(confirmCardRef), 60);
                         }}
                       >
                         <span>{label}</span>
@@ -302,7 +345,7 @@ export default function PublicSchedule() {
         )}
       </div>
 
-      <div className="card">
+      <div ref={confirmCardRef} className="card step step3">
         <div className="cardHeader">
           <div>
             <div className="title">3. Подтвердите запись</div>

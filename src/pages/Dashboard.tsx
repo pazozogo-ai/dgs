@@ -53,13 +53,13 @@ export default function Dashboard() {
   }
 
   return (
-		    <div className="container narrow">
-	      <div className="grid">
-      <div className="card">
+    <div className="container narrow">
+      <div className="grid2">
+        <div className="card">
         <div className="sectionHead">
           <div>
             <div className="h1">Настройки</div>
-	            <div className="sub">Настройте, когда Вам удобно принимать консультации. Клиент выберет время и подтвердит запись в Telegram.</div>
+            <div className="sub">Настройте, когда Вам удобно принимать консультации. Клиент выберет время и подтвердит запись в Telegram.</div>
           </div>
         </div>
 
@@ -138,18 +138,20 @@ export default function Dashboard() {
         </button>
       </div>
 
-      <div className="card">
+        <div className="card">
         <div className="sectionHead">
           <div>
             <div className="h1" style={{ fontSize: 22 }}>Ваша ссылка</div>
-	            <div className="sub">Отправьте эту ссылку клиенту — он выберет время и подтвердит запись в Telegram.</div>
+            <div className="sub">Отправьте эту ссылку клиенту — он выберет время и подтвердит запись в Telegram.</div>
           </div>
         </div>
-	        <p className="muted">Ссылка публичная — её можно просто переслать в чате.</p>
+
+        <p className="muted">Ссылка публичная — её можно просто переслать в чате.</p>
         <div className="copybox"><code>{publicUrl}</code></div>
         <a className="btn" href={publicUrl} target="_blank" rel="noreferrer">Открыть расписание</a>
       </div>
-	      </div>
-	    </div>
+
+      </div>
+    </div>
   );
 }
